@@ -26,7 +26,7 @@
 
     int left = position;
     int right = (left + 1) % PHILOSOPHES;
-    int nbrOfCycles=2; // 100000
+    int nbrOfCycles=100000; // 100000
 
     while(nbrOfCycles) {
         
@@ -64,7 +64,13 @@
         return EXIT_FAILURE;
     }
 
-    int PHILOSOPHES = atoi(argv[1]);     
+    int PHILOSOPHES = atoi(argv[1]); 
+    if (PHILOSOPHES < 2)
+    {
+        printf("Need 2 or more Threed\n");
+        return EXIT_FAILURE;
+    }
+        
     printf("This is the number of Philosopher %d\n", PHILOSOPHES);
 
     pthread_t * phil = (pthread_t *) malloc(sizeof(pthread_t *) * PHILOSOPHES);
