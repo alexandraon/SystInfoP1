@@ -30,29 +30,30 @@
         while(numbrExe > 0){
             //prepare_data();
             printf("Writer %d is trying to enter into database for modifying the data\n",position);
-            pthread_mutex_lock(&writecount);
+            pthread_mutex_lock(&mutex_writecount);
                 //section critique
                 writecount +=1;
                 if (writecount == 1)
                 {
                     sem_wait(&rsem);
                 }
-            pthread_mutex_unlock(&writecount);
+            pthread_mutex_unlock(&mutex_writecount);
 
             sem_wait(&wsem);
             // section critique, un seul writer à la fois
             printf("Writer %d is writing into the database\n",position);
-            numbrExe--;
+            for (int i=0; i<10000; i++);
             sem_post(&wsem);
 
-            pthread_mutex_lock(&writecount);
+            pthread_mutex_lock(&mutex_writecount);
             writecount-=1;
             if (writecount==0)
             {
                 sem_post(&rsem);
             }
-            pthread_mutex_unlock(&writecount);
+            pthread_mutex_unlock(&mutex_writecount);
             printf("Writer %d is leaving the database\n",position);
+            numbrExe--;
         }
     }
 
@@ -61,6 +62,7 @@
         int position  = *(arge->position);
         int numbrExe = *(int *)(arge->numbrExe);
         while(numbrExe > 0){
+                
                 //int temp = *(int*) arg;
                 printf("Reader %d is trying to enter into the Database for reading the data\n",position);
 
@@ -75,13 +77,12 @@
                     sem_wait(&wsem);
                     }
                 pthread_mutex_unlock(&mutex_readcount);
-
                 sem_post(&rsem);
                 pthread_mutex_unlock(&z);
 
                 //read_database();
                 printf("Reader %d is reading the database\n",position);
-                numbrExe--;
+                for (int i=0; i<10000; i++);
                 pthread_mutex_lock(&mutex_readcount);
                     // section critique
                     readcount--;
@@ -90,9 +91,9 @@
                         sem_post(&wsem);
                         }
                 pthread_mutex_unlock(&mutex_readcount);
-            
             //process_data();
             printf("Reader %d is leaving the database\n",position);
+            numbrExe--;
             }
     }   
 
@@ -114,8 +115,9 @@
             return EXIT_FAILURE;
         }
 
-        int nombreExeW = 3;
-        int nombreExeR = 2;
+        
+        int nombreExeR = 640;
+        int nombreExeW = 2560;
 
         int readers= atoi(argv[1]);
         int writers = atoi(argv[2]);
@@ -134,12 +136,18 @@
         int lastCons = exeThreadConsom+restConsom;
 
 
-        void *pointerProd1 = &exeThreadProd;
-        void *pointerProd2 = &lastProd;
+        void *pointerREAD1 = &exeThreadProd;
+        void *pointerREAD2 = &lastProd;
 
-        void *pointerCons1 = &exeThreadConsom;
-        void *pointerCons2 = &lastCons;
+        void *pointerWrite1 = &exeThreadConsom;
+        void *pointerWrite2 = &lastCons;
 
+        printf("%d\n",exeThreadProd);
+        printf("%d\n",lastProd);
+        printf("%d\n",exeThreadConsom);
+        printf("%d\n",lastCons);
+        
+        
 
         pthread_t readerThread[readers],writerThread[writers];
 
@@ -152,13 +160,13 @@
             int * positionCopy = (int *) malloc(sizeof(int));
             *positionCopy = i;
             if(i < readers-1){
-                readerrr->numbrExe = pointerProd1;
+                readerrr->numbrExe = pointerREAD1;
                 readerrr->position = positionCopy;
                 pthread_create(&readerThread[i], NULL, reader, readerrr);
             }
             else
             {
-                readerrr->numbrExe = pointerProd2;
+                readerrr->numbrExe = pointerREAD2;
                 readerrr->position = positionCopy;
                 pthread_create(&readerThread[i], NULL, reader, readerrr);
             }
@@ -170,13 +178,13 @@
             int * positionCopy = (int *) malloc(sizeof(int));
             *positionCopy = i;
             if(i < readers-1){
-                writerrr->numbrExe = pointerCons1;
+                writerrr->numbrExe = pointerWrite1;
                 writerrr->position = positionCopy;
                 pthread_create(&writerThread[i], NULL, writer, writerrr);
             }
             else
             {
-                writerrr->numbrExe = pointerCons2;
+                writerrr->numbrExe = pointerWrite2  ;
                 writerrr->position = positionCopy;
                 pthread_create(&writerThread[i], NULL, writer, writerrr);
             }
